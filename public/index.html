@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Search</title>
+
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin: 64px auto;
+            width: 800px;
+            padding: 32px;
+        }
+
+        .app > * {
+            padding: 16px 10px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+        }
+
+        span:not(.error-inline) {
+            font-size: 2em;
+            font-weight: 700;
+            background-color: lch(95% 10 285);
+            color: lch(25% 50 285);
+        }
+
+        span:not(.error-inline):focus {
+            outline: unset;
+        }
+
+        span.error-inline {
+            text-decoration: underline;
+            text-decoration-color: lch(25% 50 0);
+            text-decoration-thickness: 3px;
+            text-decoration-style: wavy;
+            text-underline-offset: 0.2em;
+        }
+
+        .error {
+            background-color: lch(95% 10 0);
+        }
+
+        .error .message {
+            font-size: 2em;
+            font-weight: 700;
+            color: lch(25% 50 0);
+        }
+
+        .error button {
+            margin-top: 8px;
+            background: transparent;
+            border: unset;
+            font-size: 1.2em;
+        }
+
+        .error button:hover {
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .ok {
+            background-color: lch(95% 10 160);
+            color: lch(25% 50 160);
+            font-size: 2em;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <span contenteditable="true" spellcheck="false"></span>
+        <div class="error" style="display: none">
+            <p class="message">pog pog pog</p>
+            <button class="suggestion">sug</button>
+        </div>
+        <div class="ok" style="display: none">
+            <p>Ok</p>
+        </div>
+    </div>
+</body>
+
+<script>
+    const input = document.querySelector("[contenteditable]");
+    const ok = document.querySelector(".ok");
+    const error = document.querySelector(".error");
+    const message = document.querySelector(".message");
+    const suggestion = document.querySelector(".suggestion");
+    const span = document.createElement("span");
+    span.classList.add("error-inline");
+
+    input.addEventListener("input", async () => {
+        if (input.textContent.trim() === "") {
+            ok.style.display = "none";
+            error.style.display = "none";
+            return;
+        }
+
+        const result = await (await fetch(`/parse?q=${encodeURIComponent(input.textContent.trim())}`)).json();
+        console.log(result);
+
+        if (result.error === undefined) {
+            ok.style.display = "block";
+            error.style.display = "none";
+            return;
+        }
+
+        ok.style.display = "none";
+        error.style.display = "block";
+        message.textContent = result.error.message;
+
+        if (result.error.suggestion !== undefined) {
+            suggestion.style.display = "block";
+            suggestion.textContent = result.error.suggestion.description;
+            suggestion.onclick = () => {
+                input.textContent = result.query.substring(0, result.error.start) + result.error.suggestion.fullReplacement + result.query.substring(result.error.end);
+                input.dispatchEvent(new Event("input"));
+            }
+        } else {
+            suggestion.style.display = "none";
+        }
+    });
+</script>
+</html>
