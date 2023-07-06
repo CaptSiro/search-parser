@@ -1,4 +1,12 @@
-import { SearchPropertyValidation, SearchConfig, SearchProperty } from "./@types";
+import {
+    SearchPropertyValidation,
+    SearchConfig,
+    SearchProperty,
+    SearchQuery,
+    ValidationSuggestion,
+    SearchQuerySuggestion
+} from "./@types";
+import { findClosestString } from "./levenshteinDistance";
 
 
 
@@ -25,7 +33,7 @@ export class SearchParser {
         this.config.relationSymbols.sort((a, b) => b.length - a.length);
     }
 
-    parse(query: string) {
+    parse(query: string): SearchQuery {
         const tokens = query.trim().split(this.config.tokenDelimiter);
         const unnamed: string[] = [];
         const properties: SearchProperty[] = [];
@@ -59,7 +67,8 @@ export class SearchParser {
                     error: {
                         message: validation.error.message,
                         start,
-                        end: start + token.length
+                        end: start + token.length,
+                        suggestion: this.createSuggestion(validation.error.suggestion, prop, extracted.symbol, value),
                     }
                 }
             }
@@ -106,16 +115,34 @@ export class SearchParser {
         ];
     }
 
-    private validateProperty(property: string, value: string, comparison: string): SearchPropertyValidation {
-        if (this.config.propertyMap[property] === undefined) {
+    private validateProperty(prop: string, value: string, comparison: string): SearchPropertyValidation {
+        if (this.config.propertyMap[prop] === undefined) {
+            const props = Object.keys(this.config.propertyMap);
+            const closest = props[findClosestString(prop, props)];
+
             return {
                 isValid: false,
                 error: {
-                    message: `'${property}' is not supported`
+                    message: `'${prop}' is not supported`,
+                    suggestion: {
+                        prop: closest,
+                        description: `Did you mean ${closest}?`
+                    }
                 }
             };
         }
 
-        return this.config.propertyMap[property](value, comparison);
+        return this.config.propertyMap[prop](value, comparison);
+    }
+
+    private createSuggestion(validationSuggestion: ValidationSuggestion | undefined, prop: string, symbol: string, value: string): SearchQuerySuggestion | undefined {
+        if (validationSuggestion === undefined) {
+            return undefined;
+        }
+
+        return {
+            description: validationSuggestion.description,
+            fullReplacement: (validationSuggestion.prop ?? prop) + (validationSuggestion.symbol ?? symbol) + (validationSuggestion.value ?? value)
+        };
     }
 }

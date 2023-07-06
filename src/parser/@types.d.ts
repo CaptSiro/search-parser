@@ -1,7 +1,13 @@
+export type SearchQuerySuggestion = {
+    description: string,
+    fullReplacement: string
+}
+
 export type SearchQueryError = {
     query: string,
     error: {
         message: string,
+        suggestion?: SearchQuerySuggestion,
         start?: number,
         end?: number
     },
@@ -28,12 +34,19 @@ export type SearchConfig = {
     propertyMap: SearchPropertyMap
 }
 
+export type ValidationSuggestion = {
+    prop?: string
+    symbol?: string,
+    value?: string
+    description: string
+}
+
 export type SearchPropertyValidation = {
     isValid: false,
     error: {
         message: string,
-        valueSuggestion?: string[]
-    }
+        suggestion?: ValidationSuggestion
+    },
 } | {
     isValid: true,
     parsed: any
