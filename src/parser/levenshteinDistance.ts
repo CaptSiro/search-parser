@@ -1,4 +1,4 @@
-// https://www.30secondsofcode.org/js/s/levenshtein-distance/
+// https://www.30secondsofcode.org/js/s/levenshtein-distance/ optimized
 export function levenshteinDistance(s: string, t: string): number {
     if (s.length === 0) {
         return t.length
@@ -8,27 +8,27 @@ export function levenshteinDistance(s: string, t: string): number {
         return s.length
     }
 
-    const array = [];
+    const bufferSize = s.length + 1;
+    const matrix = new Uint32Array((t.length + 1) * bufferSize);
 
     for (let i = 0; i <= t.length; i++) {
-        array[i] = [i];
+        matrix[i * bufferSize] = i;
 
         for (let j = 1; j <= s.length; j++) {
             if (i === 0) {
-                array[i][j] = j;
+                matrix[j] = j;
                 continue;
             }
 
-
-            array[i][j] = Math.min(
-                array[i - 1][j] + 1,
-                array[i][j - 1] + 1,
-                array[i - 1][j - 1] + (s[j - 1] === t[i - 1] ? 0 : 1)
+            matrix[i * bufferSize + j] = Math.min(
+                matrix[(i - 1) * bufferSize + j] + 1,
+                matrix[i * bufferSize + j - 1] + 1,
+                matrix[(i - 1) * bufferSize + j - 1] + (s[j - 1] === t[i - 1] ? 0 : 1)
             );
         }
     }
 
-    return array[t.length][s.length];
+    return matrix[matrix.length - 1];
 }
 
 
