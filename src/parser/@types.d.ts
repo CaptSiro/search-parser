@@ -14,7 +14,6 @@ export type SearchQueryError = {
 }
 
 export type SearchProperty = {
-    prop: string,
     symbol: string,
     value: any
 }
@@ -22,7 +21,7 @@ export type SearchProperty = {
 export type SearchQuery = SearchQueryError | {
     query: string,
     unnamed: string[],
-    properties: SearchProperty[],
+    properties: Record<string, SearchProperty[]>,
     delimiter: string
 }
 

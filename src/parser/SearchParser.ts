@@ -36,7 +36,7 @@ export class SearchParser {
     parse(query: string): SearchQuery {
         const tokens = query.trim().split(this.config.tokenDelimiter);
         const unnamed: string[] = [];
-        const properties: SearchProperty[] = [];
+        const properties: Record<string, SearchProperty[]> = {};
 
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i].trim();
@@ -73,8 +73,15 @@ export class SearchParser {
                 }
             }
 
-            properties.push({
-                prop,
+            if (properties[prop] === undefined) {
+                properties[prop] = [{
+                    symbol: extracted.symbol,
+                    value: validation.parsed
+                }];
+                continue;
+            }
+
+            properties[prop].push({
                 symbol: extracted.symbol,
                 value: validation.parsed
             });
