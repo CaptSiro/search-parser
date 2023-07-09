@@ -1,9 +1,9 @@
 import { SearchParser } from "./parser/SearchParser";
 import {
     defaultRelationSymbols,
-    NumberSearchProperty,
-    SetSearchProperty,
-    TextSearchProperty
+    num,
+    set,
+    text, time
 } from "./parser/validators";
 import express from 'express';
 import * as path from "path";
@@ -14,13 +14,15 @@ const app = express();
 const parser = new SearchParser({
     tokenDelimiter: " ",
     propertyMap: {
-        artist: TextSearchProperty(),
-        bpm: NumberSearchProperty(),
-        tags: SetSearchProperty(["rock", "metal"], false),
-        mode: SetSearchProperty(["osu", "taiko", "mania", "catch"])
+        artist: text(),
+        bpm: num(),
+        tags: set(["rock", "metal"], false),
+        mode: set(["osu", "taiko", "mania", "catch"]),
+        length: time()
     },
     relationSymbols: defaultRelationSymbols
 });
+
 
 
 

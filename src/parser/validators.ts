@@ -11,7 +11,7 @@ export const defaultRelationSymbols = [...equalsSymbols, ...greaterThanSymbols, 
 
 
 
-export function TextSearchProperty(): SearchPropertyValidator {
+export function text(): SearchPropertyValidator {
     return (value: string, symbol: string): SearchPropertyValidation => {
         if (!(symbol === "=" || symbol === "!=" || symbol === "==")) {
             return {
@@ -35,7 +35,7 @@ export function TextSearchProperty(): SearchPropertyValidator {
 
 
 
-export function NumberSearchProperty(includeFloats: boolean = true): SearchPropertyValidator {
+export function num(includeFloats: boolean = true): SearchPropertyValidator {
     const integerRegex = /^[0-9]+$/;
 
     return (value, symbol): SearchPropertyValidation => {
@@ -83,7 +83,7 @@ export function NumberSearchProperty(includeFloats: boolean = true): SearchPrope
 
 
 
-export function SetSearchProperty(set: string[], caseSensitive = true): SearchPropertyValidator {
+export function set(set: string[], caseSensitive = true): SearchPropertyValidator {
     if (set.length === 0) {
         throw new Error("Set must have at least one value.");
     }
@@ -132,7 +132,7 @@ export function SetSearchProperty(set: string[], caseSensitive = true): SearchPr
 
             if (index === -1) {
                 values.splice(i, 1);
-                description = `Remove '${incorrectValue}'`;
+                description = `Remove '${incorrectValue}'.`;
             } else {
                 values[i] = set[index];
                 description = `Did you mean '${set[index]}'?`;
@@ -159,6 +159,56 @@ export function SetSearchProperty(set: string[], caseSensitive = true): SearchPr
 
 
 
-export function BooleanSearchProperty(): SearchPropertyValidator {
-    return SetSearchProperty(["true", "false", "yes", "no", "1", "0"], false);
+export function bool(): SearchPropertyValidator {
+    return set(["true", "false", "yes", "no", "1", "0"], false);
+}
+
+
+
+const timeExtractors: [RegExp, (matches: RegExpMatchArray)=>any][] = [
+    [/^([0-9]+)s?$/, (matches: RegExpMatchArray) => Number(matches[1])],
+    [/^([0-9]+)m$/, (matches: RegExpMatchArray) => Number(matches[1]) * 60],
+    [/^([0-9]+):([0-9]+)$/, (matches: RegExpMatchArray) => Number(matches[1]) * 60 + Number(matches[2])]
+];
+
+export function time(): SearchPropertyValidator {
+    return (value: string, symbol: string): SearchPropertyValidation => {
+        if (!(symbol === "=" || symbol === "!=" || symbol === "==")) {
+            return {
+                isValid: false,
+                error: {
+                    message: "Time can only use =, ==, != comparison symbols.",
+                    suggestion: {
+                        symbol: "=",
+                        description: "Use equals instead."
+                    }
+                }
+            };
+        }
+
+        for (let i = 0; i < timeExtractors.length; i++) {
+            const [regex, constructor] = timeExtractors[i];
+            const matches = regex.exec(value);
+
+            if (matches === null) {
+                continue;
+            }
+
+            return {
+                isValid: true,
+                parsed: constructor(matches)
+            }
+        }
+
+        return {
+            isValid: false,
+            error: {
+                message: "Not recognised time signature.",
+                suggestion: {
+                    value: "0:0",
+                    description: "Try using min:sec signature."
+                }
+            }
+        };
+    }
 }
